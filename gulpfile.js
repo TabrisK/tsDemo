@@ -43,7 +43,7 @@ function updateInfp(){
 }
 gulp.task("serve",["copy-html","bundle"], updateInfp);//实时编译
 
-gulp.task("default", ["copy-html"], function () {//打包
+gulp.task("build", ["copy-html"], function(){//打包
     return browserify({
         basedir: '.',
         debug: true,
@@ -63,4 +63,8 @@ gulp.task("default", ["copy-html"], function () {//打包
         .pipe(uglify())
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest("dist"));
+})
+
+gulp.task("default", ["build"], function (cb) {
+    cb();
 });

@@ -1,12 +1,13 @@
 {
-  "files": [
-    "src/main.ts",
-    "src/greet.ts",
-    "src/typeProtection.ts"
-  ],
-  "compilerOptions": {
-    "noImplicitAny": true,
-    "noImplicitThis": false,
-    "target": "es2015"
-  }
+    "files": [
+        "src/main.ts",
+        "src/greet.ts",
+        "src/typeProtection.ts",
+        "src/router.ts"
+    ],
+    "compilerOptions": {
+        "noImplicitAny": true,
+        "noImplicitThis": false,
+        "target": "es2015"
+    }
 }

@@ -7,12 +7,12 @@ var source = require('vinyl-source-stream');
 var tsify = require("tsify");
 var buffer = require('vinyl-buffer');
 var paths = {
-    pages: ['src/*.html'],
+    pages: ['src/**/*.html'],
     assets: ['src/assets/*.scss']
 };
 
 
-var watchedBrowserify = watchify(browserify(glob.sync('src/*.ts'), {
+var watchedBrowserify = watchify(browserify('src/main.ts', {
     basedir: '.',
     debug: true,
     //entries: glob.sync('src/{assets/*.scss,*.ts}'),
@@ -32,11 +32,22 @@ gulp.task("copy-html", function () {
         .pipe(gulp.dest("dist"));
 });
 
-gulp.task("sass", function(){
+function sass(){
     return gulp.src(paths.assets, { base: 'src' })
     .pipe($.sass().on("error", $.sass.logError))
     .pipe(gulp.dest("dist"));
+}
+
+gulp.task("sass", function(){
+    return sass();
 });
+
+function watchSass(){
+    return $.watch(paths.assets,function(){
+    console.log("sass changed");
+        sass();
+    })
+}
 
 function bundle(){
     return watchedBrowserify
@@ -50,7 +61,8 @@ gulp.task("bundle", function(){
 });
 
 function updateInfp(){
-    watchedBrowserify.on("update", gulp.parallel("sass", "bundle"));
+    watchSass();
+    watchedBrowserify.on("update", bundle);
     watchedBrowserify.on("log", $.util.log);
 }
 gulp.task("serve",gulp.series("copy-html", "sass", "bundle", updateInfp) );//实时编译

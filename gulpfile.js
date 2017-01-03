@@ -27,6 +27,11 @@ gulp.task("glob", function(cb){
     cb();
 });
 
+gulp.task('fonts', function() {
+  return gulp.src('./node_modules/font-awesome/fonts/*')
+    .pipe(gulp.dest('dist/assets/fonts'))
+})
+
 gulp.task("copy-html", function () {
     return gulp.src(paths.pages)
         .pipe(gulp.dest("dist"));

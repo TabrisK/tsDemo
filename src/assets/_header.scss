@@ -1,6 +1,19 @@
-.header{
-    padding-top: 10px;
-    padding-bottom: 10px;
+@import "common";
+.header {
+    padding: 10px 20px;
     background-color: #f5f5f5;
     border-bottom: 1px solid #e5e5e5;
+    section {
+        width: 980px;
+        margin: 0px auto;
+        @include respond-to(handhelds) {
+            width: 100%;
+        }
+        @include respond-to(medium-screens) {
+            width: 720px;
+        }
+        @include respond-to(wide-screens) {
+            width: 980px;
+        }
+    }
 }

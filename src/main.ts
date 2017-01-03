@@ -1,3 +1,3 @@
-import  routeSetter  from "./ts/mRoute"
+import  routeSetter  from "./common/mRoute"
 
 routeSetter();

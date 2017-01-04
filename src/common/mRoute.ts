@@ -2,18 +2,31 @@ import { Route, Router, State } from "../vendors/router";
 
 let routeSetter = (): void => {
     let defaultState = {
+        node: "main.preface",
         name: "preface",
         templateUrl: "./common/preface.html"
     };
 
     let states: State[] = [
         {
-            name: "preface",
-            templateUrl: "./common/preface.html"
-        }, {
+            node: ".main",
+            name: "main",
+            templateUrl: "./common/header.html"
+        },
+        {
+            node: ".header",
             name: "header",
             templateUrl: "./common/header.html"
+        }, {
+            node: ".main.leftside",
+            name: "leftside",
+            templateUrl: "./common/leftside.html"
         }, defaultState, {
+            node: ".profile",
+            name: "profile",
+            templateUrl: "./profile/profile.html"
+        }, {
+            node: ".main.jsModuleBrief",
             name: "jsModuleBrief",
             templateUrl: "./jsModuleBrief/jsModuleBrief.html"
         }

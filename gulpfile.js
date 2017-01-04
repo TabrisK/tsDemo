@@ -8,6 +8,7 @@ var tsify = require("tsify");
 var buffer = require('vinyl-buffer');
 var paths = {
     pages: ['src/**/*.html'],
+    img: ['src/assets/img/*.{png,jpg,jpng,gif}', 'src/*.ico'],
     assets: ['src/assets/*.scss']
 };
 
@@ -22,64 +23,64 @@ var watchedBrowserify = watchify(browserify('src/main.ts', {
 }).plugin(tsify));
 
 
-gulp.task("glob", function(cb){
+gulp.task("glob", function(cb) {
     console.log(glob.sync('./src/{assets/*.scss,*.ts}'));
     cb();
 });
 
 gulp.task('fonts', function() {
-  return gulp.src('./node_modules/font-awesome/fonts/*')
-    .pipe(gulp.dest('dist/assets/fonts'))
+    return gulp.src('./node_modules/font-awesome/fonts/*')
+        .pipe(gulp.dest('dist/assets/fonts'))
 })
 
-gulp.task("copy-html", function () {
-    return gulp.src(paths.pages)
+gulp.task("copy-html", function() {
+    return gulp.src(paths.pages.concat(paths.img), { base: "./src" })
         .pipe(gulp.dest("dist"));
 });
 
-function sass(){
+function sass() {
     return gulp.src(paths.assets, { base: 'src' })
-    .pipe($.sass().on("error", $.sass.logError))
-    .pipe(gulp.dest("dist"));
+        .pipe($.sass().on("error", $.sass.logError))
+        .pipe(gulp.dest("dist"));
 }
 
-gulp.task("sass", function(){
+gulp.task("sass", function() {
     return sass();
 });
 
-function watchSass(){
-    return $.watch(paths.assets,function(){
-    console.log("sass changed");
+function watchSass() {
+    return $.watch(paths.assets, function() {
+        console.log("sass changed");
         sass();
     })
 }
 
-function bundle(){
+function bundle() {
     return watchedBrowserify
         .bundle()
         .pipe(source('bundle.js'))
         .pipe(gulp.dest("dist"));
 }
 
-gulp.task("bundle", function(){
+gulp.task("bundle", function() {
     return bundle();
 });
 
-function updateInfp(){
+function updateInfp() {
     watchSass();
     watchedBrowserify.on("update", bundle);
     watchedBrowserify.on("log", $.util.log);
 }
-gulp.task("serve",gulp.series("copy-html", "sass", "bundle", updateInfp) );//实时编译
+gulp.task("serve", gulp.series("copy-html", "sass", "bundle", updateInfp)); //实时编译
 
-gulp.task("build", gulp.series("copy-html", "sass", function buildCb(){//打包
+gulp.task("build", gulp.series("copy-html", "sass", function buildCb() { //打包
     return browserify({
-        basedir: '.',
-        debug: true,
-        entries: ['src/main.ts'],
-        cache: {},
-        packageCache: {}
-    })
+            basedir: '.',
+            debug: true,
+            entries: ['src/main.ts'],
+            cache: {},
+            packageCache: {}
+        })
         .plugin(tsify)
         .transform('babelify', {
             presets: ['es2015'],
@@ -88,7 +89,7 @@ gulp.task("build", gulp.series("copy-html", "sass", function buildCb(){//打包
         .bundle()
         .pipe(source('bundle.js'))
         .pipe(buffer())
-        .pipe($.sourcemaps.init({loadMaps: true}))
+        .pipe($.sourcemaps.init({ loadMaps: true }))
         .pipe($.uglify())
         .pipe($.sourcemaps.write('./'))
         .pipe(gulp.dest("dist"));

@@ -3,6 +3,7 @@
 @import "header";
 body {
     margin: 0px;
+    font-family: Microsoft Yahei;
 }
 
 .container {
@@ -17,5 +18,13 @@ body {
     }
     @include respond-to(wide-screens) {
         width: 980px;
+    }
+}
+
+a {
+    color: black;
+    text-decoration: none;
+    &:hover {
+        color: rgb(0, 128, 255);
     }
 }

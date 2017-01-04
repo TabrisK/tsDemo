@@ -1,14 +1,19 @@
 import { Route, Router, State } from "../vendors/router";
-//import { _ } from "underscore";
-
 
 let routeSetter = (): void => {
+    let defaultState = {
+        name: "preface",
+        templateUrl: "./common/preface.html"
+    };
 
     let states: State[] = [
         {
             name: "preface",
             templateUrl: "./common/preface.html"
         }, {
+            name: "header",
+            templateUrl: "./common/header.html"
+        }, defaultState, {
             name: "jsModuleBrief",
             templateUrl: "./jsModuleBrief/jsModuleBrief.html"
         }
@@ -16,7 +21,7 @@ let routeSetter = (): void => {
 
     let router: Router = {
         "state": states,
-        "default": states[0]
+        "default": defaultState
     }
 
     let r = new Route(router);

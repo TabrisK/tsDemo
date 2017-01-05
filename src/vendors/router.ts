@@ -95,9 +95,9 @@ window.onload = () => {//first load
 window.addEventListener("hashchange", (e) => {
     let oldp = hashRegx.exec(e.oldURL);
     let mp = hashRegx.exec(e.newURL);
-    setfromState(oldp?oldp[1]:"");
-    setCurrentState(mp?mp[1]:"");
-    if (mp) {
+    setfromState(oldp ? oldp[1] : "");
+    setCurrentState(mp ? mp[1] : "");
+    if (mp && mp[1]) {
         go(mp[1].replace("/", "."));
     }
     else {
@@ -113,7 +113,7 @@ function getCurrentState() {
 }
 
 function setCurrentState(url?: string) {
-    if(!url)return currentState = router.default;
+    if (!url) return currentState = router.default;
     let temporaryState = findStateByNode(url.replace("/", "."));
     if (temporaryState) {
         currentState = temporaryState;
@@ -127,7 +127,7 @@ function getfromState() {
 }
 
 function setfromState(url?: string) {
-    if(!url)return fromState = router.default;
+    if (!url) return fromState = router.default;
     let temporaryState = findStateByNode(url.replace("/", "."));
     if (temporaryState) {
         fromState = temporaryState;
@@ -143,11 +143,53 @@ function goDefault() {
 function go(node: string): void;
 function go(state: State): void;
 function go(x: any) {
+    var stateT: State;
     if (typeof x == "string") {
+        stateT = findStateByNode(x) || getCurrentState();
+    } else stateT = x;
 
-    } else {
+    compileDifference(findStateByUrl(getfromState().node.replace(".", "/")),
+        findStateByUrl(getCurrentState().node.replace(".", "/")));
+    /**
+     * @param get oldState and newState for compile
+     */
+    function compileDifference(oldSList: State[], newSList: State[], aimEle?: HTMLElement, isTransform?: boolean) {
 
+        for (let tEle of util.getAllElementsWithAttribute("template", aimEle)) {
+            let templateVal = tEle.getAttribute("template");
+            let tState: State;
+            if (isTransform == undefined || isTransform == null)
+                isTransform = oldSList[0] != newSList[0];
+            if (!!templateVal) {//normal template
+                if (templateVal.split("|").indexOf(newSList[0].name) >= 0) {//compile aim
+                    aimEle = tEle;
+                    tState = newSList[0];
+                    if (isTransform) {//if different,insert template
+                        insertTemplate(tEle, tState, () => {
+                            compileDifference(oldSList.slice(1), newSList.slice(1), tEle, oldSList[0] != newSList[0]);
+                        });
+                    } else {// if having a same node here, compiling for searching difference with node
+                        compileDifference(oldSList.slice(1), newSList.slice(1), tEle, oldSList[0] != newSList[0]);
+                    }
+                } else {
+                    if (isTransform) {
+                        //templateVal must be a string without "|"
+                        insertTemplate(tEle, findStateByName(templateVal), () => {
+                            compileTemplate(tEle);
+                        });
+                    }
+                }//compile other template
+            } else {//target template who doesn't have  value
+                if (newSList.length == 1) {//the last branch
+                    tState = newSList[0];
+                    insertTemplate(tEle, tState, () => {
+                        compileTemplate(tEle);
+                    });
+                }
+            }
+        }
     }
+
 }
 
 function getUrl(s: State | string): string {
@@ -158,6 +200,10 @@ function getUrl(s: State | string): string {
     } else {
         console.error(s.name + " isn't a state.");
     }
+}
+
+function getParentState(state: State) {
+    return findStateByNode(state.node.replace(/.?([\w-]*)$/, ""));
 }
 
 function findStateByNode(node: string) {
@@ -181,10 +227,11 @@ function setAllTemplate(path?: string) {
     } else {//set default state
         states = findStateByUrl(getUrl(router.default));
     }
-    compileAim(states, () => {//aim template finished
+    compileAim(states, () => { });//aim template finished
 
-    });
-
+    /**
+     * @param states: a state list that from the top state to the branch one;
+     */
     function compileAim(states: State[], fn: Function, aimEle?: HTMLElement): void {
         if (states.length > 0) {
             util.getAllElementsWithAttribute("template", aimEle).map((tEle) => {
@@ -204,45 +251,51 @@ function setAllTemplate(path?: string) {
                         });
                     }
                 } else {//target template who doesn't have  value
-                    tState = states[states.length - 1];
-                    insertTemplate(tEle, tState, () => {
-                        compileTemplate(tEle);
-                    });
+                    if (states.length == 1) {//the last branch
+                        tState = states[0];
+                        insertTemplate(tEle, tState, () => {
+                            compileTemplate(tEle);
+                        });
+                    }
                 }
             });
         } else {
             fn();
         }
     }
+}
 
-    function insertTemplate(ele: HTMLElement, state: State, fn: Function) {
-        if (state.template) {
-            ele.innerHTML = state.template;
-            fn();
-        } else getTemplateByUrl(state, (t: string) => {//asynchronous
-            ele.innerHTML = t;
-            fn();
-        });
-    }
-
-    function compileTemplate(ele?: HTMLElement) {//traverse compile who has compiled and inserted to its parent
-        let tempList = util.getAllElementsWithAttribute("template", ele);
-        if (tempList.length > 0) {//have template attr element
-            for (let tEle of tempList) {
-                let targetState = _.find(router.state, { name: tEle.getAttribute("template") });
-                if (targetState)
-                    insertTemplate(tEle, targetState, () => compileTemplate(tEle));
-            }
-        } else {
-
+function compileTemplate(ele?: HTMLElement) {//traverse compile who has compiled and inserted to its parent
+    let tempList = util.getAllElementsWithAttribute("template", ele);
+    if (tempList.length > 0) {//have template attr element
+        for (let tEle of tempList) {
+            let targetState = _.find(router.state, { name: tEle.getAttribute("template") });
+            if (targetState)
+                insertTemplate(tEle, targetState, () => compileTemplate(tEle));
         }
+    } else {
+
     }
+}
+
+function insertTemplate(ele: HTMLElement, state: State, fn: Function) {
+    if (state.template) {
+        ele.innerHTML = state.template;
+        fn();
+    } else getTemplateByUrl(state, (t: string) => {//asynchronous
+        ele.innerHTML = t;
+        fn();
+    });
 }
 
 function findStateByName(name: string) {
     return _.find(router.state, { "name": name });
 }
 
+/**
+ * @param path: URL
+ * @returns a state list from the top state to the branch
+ */
 function findStateByUrl(path: string): State[] {
     let pl = path.split("/");
     let l: State[] = [];

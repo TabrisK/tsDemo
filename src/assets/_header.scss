@@ -15,10 +15,16 @@
         @include respond-to(wide-screens) {
             width: 980px;
         }
+
+        i{
+                margin-right: 15px;
+        }
+
         .logo {
             height: 15px;
             border-radius: 50%;
-            padding-right: 8px;
+            margin-left: 15px;
+            margin-right: 8px;
         }
     }
 }

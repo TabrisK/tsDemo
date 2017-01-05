@@ -9,24 +9,22 @@ let routeSetter = (): void => {
 
     let states: State[] = [
         {
-            node: ".main",
+            node: "main",
             name: "main",
-            templateUrl: "./common/header.html"
+            templateUrl: "./common/main.html"
         },
         {
-            node: ".header",
             name: "header",
             templateUrl: "./common/header.html"
         }, {
-            node: ".main.leftside",
             name: "leftside",
             templateUrl: "./common/leftside.html"
         }, defaultState, {
-            node: ".profile",
+            node: "profile",
             name: "profile",
             templateUrl: "./profile/profile.html"
         }, {
-            node: ".main.jsModuleBrief",
+            node: "main.jsModuleBrief",
             name: "jsModuleBrief",
             templateUrl: "./jsModuleBrief/jsModuleBrief.html"
         }

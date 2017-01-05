@@ -2,7 +2,7 @@ import * as _ from 'underscore';
 //// <reference types="underscore"/>
 
 interface State {
-    node: string;
+    node?: string;
     name: string;
     templateUrl: string;
     template?: string;
@@ -18,10 +18,10 @@ interface Window {
 
 class InnerUtil {
     constructor() { }
-    public getAllElementsWithAttribute(attribute: string, node?: HTMLElement): HTMLElement[] {
+    public getAllElementsWithAttribute(attribute: string, ele?: HTMLElement): HTMLElement[] {
         let matchingElements: Array<HTMLElement> = [];
-        if (node) {
-            this.nodeWalking(node, (n: HTMLElement) => {
+        if (ele) {
+            this.nodeWalking(ele, (n: HTMLElement) => {
                 if (n.getAttribute(attribute) != null)
                     matchingElements.push(n);
             });
@@ -38,13 +38,11 @@ class InnerUtil {
         return matchingElements;
     }
 
-    public nodeWalking(node: Node, fn: Function): void {
-        let children: NodeList;
-        if (node.hasChildNodes()) {
-            children = node.childNodes;
-            for (let i = 0; i < children.length; i++) {
-                fn(children[i]);
-                this.nodeWalking(children[i], fn);
+    public nodeWalking(ele: Element, fn: Function): void {
+        if (ele.children.length > 0) {
+            for (let i = 0; i < ele.children.length; i++) {
+                fn(ele.children[i]);
+                this.nodeWalking(ele.children[i], fn);
             }
         }
     }
@@ -73,48 +71,97 @@ class Route {
     }
     public goDefault = goDefault;
     public go = go;
+    public getUrl = getUrl;
+    public getCurrentState = getCurrentState;
 }
 
 let router: Router;
 let util = new InnerUtil();
-let hashRegx = new RegExp(/#\/([\w-]*)$/);
+let currentState: State;
+let fromState: State;
+let hashRegx = new RegExp(/#\/([\/\w-]*)$/);
 
 window.onload = () => {//first load
-    var stateName = hashRegx.exec(document.URL);
-    stateName ? setAllTemplate(stateName[1]) : setAllTemplate();
+    var mp = hashRegx.exec(document.URL);
+    if (mp) {
+        setAllTemplate(mp[1]);
+        setCurrentState(mp[1]);
+    } else {
+        setAllTemplate();
+        setCurrentState();
+    }
 }
 
 window.addEventListener("hashchange", (e) => {
-    var stateName = hashRegx.exec(e.newURL)[1];
-    console.log(stateName);
-    if (stateName)
-        router.state.map((state: State) => {
-            if (state.name == stateName) {
-                go(state);
-            }
-        });
+    let oldp = hashRegx.exec(e.oldURL);
+    let mp = hashRegx.exec(e.newURL);
+    setfromState(oldp?oldp[1]:"");
+    setCurrentState(mp?mp[1]:"");
+    if (mp) {
+        go(mp[1].replace("/", "."));
+    }
+    else {
+        goDefault();
+    }
+
+    console.log(getfromState());
+    console.log(getCurrentState());
 }, false);
+
+function getCurrentState() {
+    return currentState;
+}
+
+function setCurrentState(url?: string) {
+    if(!url)return currentState = router.default;
+    let temporaryState = findStateByNode(url.replace("/", "."));
+    if (temporaryState) {
+        currentState = temporaryState;
+    } else {
+        currentState = router.default;
+    }
+}
+
+function getfromState() {
+    return fromState;
+}
+
+function setfromState(url?: string) {
+    if(!url)return fromState = router.default;
+    let temporaryState = findStateByNode(url.replace("/", "."));
+    if (temporaryState) {
+        fromState = temporaryState;
+    } else {
+        fromState = router.default;
+    }
+}
 
 function goDefault() {
     go(router.default);
 }
 
-function go(state: State | string) {
-    console.log(typeof state);
-    if (typeof state === "string") {
-        let targetState = _.find(router.state, { name: state });
-        if (targetState.template)
-            setTemplate(targetState, targetState.template);
-        else
-            getTemplateByUrl(targetState, (t: string) => setTemplate(targetState, t));
+function go(node: string): void;
+function go(state: State): void;
+function go(x: any) {
+    if (typeof x == "string") {
 
     } else {
-        if (state.template)
-            setTemplate(state, state.template);
-        else
-            getTemplateByUrl(state, (t: string) => setTemplate(state, t));
-    }
 
+    }
+}
+
+function getUrl(s: State | string): string {
+    if (typeof s == "string")
+        return s.replace(".", "/");
+    else if (s.node) {
+        return s.node.replace(".", "/");
+    } else {
+        console.error(s.name + " isn't a state.");
+    }
+}
+
+function findStateByNode(node: string) {
+    return _.find(router.state, { "node": node });
 }
 
 function getTemplateByUrl(state: State, cb: Function) {
@@ -124,62 +171,94 @@ function getTemplateByUrl(state: State, cb: Function) {
     });
 }
 
-function setTemplate(state: State, t: string): HTMLElement {
-    let targets: HTMLElement;
-    util.getAllElementsWithAttribute("template").map((ele) => {
-        if (ele.getAttribute("template") == state.name) {
-            targets = ele;
-            ele.innerHTML = t;
-        }
-    });
-    return targets;
-}
-
-
-
 /**
  * @param name: current hash value.For set default view in template
  */
-function setAllTemplate(name?: string) {
-    //traverse the dom in index.html for get element with template
-    util.getAllElementsWithAttribute("template").map((ele) => {
-        //search a state who match this template name
-        let attr = ele.getAttribute("template");
-        if (attr) {//template have explicitly target
-            for (let s of router.state) {
-                if (s.name == attr) {
-                    if (s.template)
-                        ele.innerHTML = s.template;
-                    else
-                        getTemplateByUrl(s, (t: string) => ele.innerHTML = t);
-                }
-            }
-        } else {//template for default state
-            //set target state if haveing name,or set default state
-            let s = !!name ? _.find(router.state, { "name": name }) || router.default : router.default;
-            if (s.template)
-                ele.innerHTML = s.template;
-            else
-                getTemplateByUrl(s, (t: string) => ele.innerHTML = t);
+function setAllTemplate(path?: string) {
+    let states: State[];
+    if (!!path) {//find target path states
+        states = findStateByUrl(path);
+    } else {//set default state
+        states = findStateByUrl(getUrl(router.default));
+    }
+    compileAim(states, () => {//aim template finished
 
-        }
-
-        compileTemplate(ele);
     });
 
-    function compileTemplate(ele: HTMLElement) {//traverse compile who has compiled and inserted to its parent
-        let tempList = util.getAllElementsWithAttribute("template", ele);
-        if (tempList.length > 0) {//have template attr element
-            for (let t of tempList) {
-                let targetState = _.find(router.state, { name: t.getAttribute("template") });
-                if (targetState.template) {
-                    compileTemplate(setTemplate(targetState, targetState.template));
+    function compileAim(states: State[], fn: Function, aimEle?: HTMLElement): void {
+        if (states.length > 0) {
+            util.getAllElementsWithAttribute("template", aimEle).map((tEle) => {
+                let templateVal = tEle.getAttribute("template");
+                let tState: State;
+                if (!!templateVal) {//normal template
+                    if (templateVal.split("|").indexOf(states[0].name) >= 0) {//compile aim
+                        aimEle = tEle;
+                        tState = states[0];
+                        insertTemplate(tEle, tState, () => {
+                            compileAim(states.slice(1), fn, tEle);
+                        });
+                    } else {//compile other template
+                        //templateVal must be a string without "|"
+                        insertTemplate(tEle, findStateByName(templateVal), () => {
+                            compileTemplate(tEle);
+                        });
+                    }
+                } else {//target template who doesn't have  value
+                    tState = states[states.length - 1];
+                    insertTemplate(tEle, tState, () => {
+                        compileTemplate(tEle);
+                    });
                 }
-                else
-                    getTemplateByUrl(targetState, (t: string) => compileTemplate(setTemplate(targetState, t)));
-            }
+            });
+        } else {
+            fn();
         }
     }
+
+    function insertTemplate(ele: HTMLElement, state: State, fn: Function) {
+        if (state.template) {
+            ele.innerHTML = state.template;
+            fn();
+        } else getTemplateByUrl(state, (t: string) => {//asynchronous
+            ele.innerHTML = t;
+            fn();
+        });
+    }
+
+    function compileTemplate(ele?: HTMLElement) {//traverse compile who has compiled and inserted to its parent
+        let tempList = util.getAllElementsWithAttribute("template", ele);
+        if (tempList.length > 0) {//have template attr element
+            for (let tEle of tempList) {
+                let targetState = _.find(router.state, { name: tEle.getAttribute("template") });
+                if (targetState)
+                    insertTemplate(tEle, targetState, () => compileTemplate(tEle));
+            }
+        } else {
+
+        }
+    }
+}
+
+function findStateByName(name: string) {
+    return _.find(router.state, { "name": name });
+}
+
+function findStateByUrl(path: string): State[] {
+    let pl = path.split("/");
+    let l: State[] = [];
+    let currentNode = "";
+
+    for (let sI = 0; sI < pl.length; sI++) {
+        currentNode += pl[sI];
+        for (let s of router.state) {
+            if (s.node == currentNode) {
+                l.push(s);
+                break;
+            }
+        }
+        currentNode += ".";
+    }
+    return l;
 }
 
 export { Route, Router, State }

@@ -12,10 +12,10 @@ let routeSetter = (): void => {
             node: "main",
             name: "main",
             templateUrl: "./common/main.html"
-        },
-        {
+        }, {
             name: "header",
-            templateUrl: "./common/header.html"
+            templateUrl: "./common/header/header.html",
+            controller: "./common/header/header.js"
         }, {
             name: "leftside",
             templateUrl: "./common/leftside.html"
@@ -27,6 +27,10 @@ let routeSetter = (): void => {
             node: "main.jsModuleBrief",
             name: "jsModuleBrief",
             templateUrl: "./jsModuleBrief/jsModuleBrief.html"
+        }, {
+            node: "main.about",
+            name: "about",
+            templateUrl: "./about/about.html"
         }
     ];
 

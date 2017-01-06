@@ -6,6 +6,7 @@ interface State {
     name: string;
     templateUrl: string;
     template?: string;
+    controller?: string;
 }
 
 interface Router {
@@ -153,18 +154,18 @@ function go(x: any) {
     /**
      * @param get oldState and newState for compile
      */
-    function compileDifference(oldSList: State[], newSList: State[], aimEle?: HTMLElement, isTransform?: boolean) {
+    function compileDifference(oldSList: State[], newSList: State[], aimEle?: HTMLElement, changeFork?: boolean) {
 
         for (let tEle of util.getAllElementsWithAttribute("template", aimEle)) {
             let templateVal = tEle.getAttribute("template");
             let tState: State;
-            if (isTransform == undefined || isTransform == null)
-                isTransform = oldSList[0] != newSList[0];
+            if (changeFork == undefined || changeFork == null)
+                changeFork = false;//don't change template without node in index.html
             if (!!templateVal) {//normal template
                 if (templateVal.split("|").indexOf(newSList[0].name) >= 0) {//compile aim
                     aimEle = tEle;
                     tState = newSList[0];
-                    if (isTransform) {//if different,insert template
+                    if (oldSList[0] != newSList[0]) {//if different,insert template
                         insertTemplate(tEle, tState, () => {
                             compileDifference(oldSList.slice(1), newSList.slice(1), tEle, oldSList[0] != newSList[0]);
                         });
@@ -172,7 +173,7 @@ function go(x: any) {
                         compileDifference(oldSList.slice(1), newSList.slice(1), tEle, oldSList[0] != newSList[0]);
                     }
                 } else {
-                    if (isTransform) {
+                    if (changeFork) {
                         //templateVal must be a string without "|"
                         insertTemplate(tEle, findStateByName(templateVal), () => {
                             compileTemplate(tEle);

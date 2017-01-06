@@ -9,7 +9,8 @@ var buffer = require('vinyl-buffer');
 var paths = {
     pages: ['src/**/*.html'],
     img: ['src/assets/img/*.{png,jpg,jpng,gif}', 'src/*.ico'],
-    assets: ['src/assets/*.scss']
+    assets: ['src/assets/music/*.{mp3,wav}'],
+    scss: ['src/assets/*.scss']
 };
 
 
@@ -38,8 +39,13 @@ gulp.task("copy-html", function() {
         .pipe(gulp.dest("dist"));
 });
 
+gulp.task("copy-assets", function() {
+    return gulp.src(paths.assets, { base: "./src" })
+        .pipe(gulp.dest("dist"));
+});
+
 function sass() {
-    return gulp.src(paths.assets, { base: 'src' })
+    return gulp.src(paths.scss, { base: 'src' })
         .pipe($.sass().on("error", $.sass.logError))
         .pipe(gulp.dest("dist"));
 }
@@ -49,7 +55,7 @@ gulp.task("sass", function() {
 });
 
 function watchSass() {
-    return $.watch(paths.assets, function() {
+    return $.watch(paths.scss, function() {
         console.log("sass changed");
         sass();
     })
@@ -66,14 +72,16 @@ gulp.task("bundle", function() {
     return bundle();
 });
 
+gulp.task("compileOthers", function() {});
+
 function updateInfp() {
     watchSass();
     watchedBrowserify.on("update", bundle);
     watchedBrowserify.on("log", $.util.log);
 }
-gulp.task("serve", gulp.series("copy-html", "sass", "bundle", updateInfp)); //实时编译
+gulp.task("serve", gulp.series("copy-html", "copy-assets", "sass", "bundle", updateInfp)); //实时编译
 
-gulp.task("build", gulp.series("copy-html", "sass", function buildCb() { //打包
+gulp.task("build", gulp.series("copy-html", "copy-assets", "sass", function buildCb() { //打包
     return browserify({
             basedir: '.',
             debug: true,

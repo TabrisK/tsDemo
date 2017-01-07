@@ -1,6 +1,7 @@
 import { Route, Router, State } from "../vendors/router";
+import Hx from "../vendors/helex";
 
-let routeSetter = (): void => {
+let routeSetter = (hx: Hx): void => {
     let defaultState = {
         node: "main.preface",
         name: "preface",
@@ -38,10 +39,9 @@ let routeSetter = (): void => {
         "state": states,
         "default": defaultState
     }
-
-    let r = new Route(router);
+    let r = new Route(router, hx);
 }
 
-export default function () {
-    routeSetter();
+export default function (hx: Hx) {
+    routeSetter(hx);
 };

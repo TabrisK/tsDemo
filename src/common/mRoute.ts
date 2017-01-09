@@ -1,5 +1,5 @@
 import { Route, Router, State } from "../vendors/router";
-import Hx from "../vendors/helex";
+import { Hx } from "../vendors/helex";
 
 let routeSetter = (hx: Hx): void => {
     let defaultState = {

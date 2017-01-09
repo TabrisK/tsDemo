@@ -1,5 +1,5 @@
 import * as _ from 'underscore';
-import Hx from './helex';
+import { Hx } from './helex';
 import Util from "./util";
 
 

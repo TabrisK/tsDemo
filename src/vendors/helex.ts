@@ -3,14 +3,14 @@ import Util from "../vendors/util";
 
 export { Scope, ScopeMap, Hx }
 
-class Scope {
-    private localScope:{[x:string]: number|string|Function};
-    constructor(fn:(s:{[x:string]: number|string|Function})=>void){
+class Scope{
+    private localScope:any;
+    constructor(fn:(member:{[x:string]: any})=>void){
         this.localScope = {};
         fn(this.localScope);
     }
-    public eval(scopeName: string, expression: string){
-        eval(expression);
+    public get(){
+        return this.localScope;
     }
 }
 
@@ -35,7 +35,7 @@ class Hx implements helex {
                     let attr = subElements[i].attributes.item(j);
                     if (attr != null){
                         if(directiveCompiler[attr.name]){
-                            directiveCompiler[attr.name](subElements[i], scope, attr);//compile
+                            directiveCompiler[attr.name](state.name, subElements[i], scope, attr);//compile
                         }
                     }
                 }
@@ -48,9 +48,14 @@ class Hx implements helex {
 }
 
 let directiveCompiler: {[key: string]: Function} = {
-    "h-click": function(ele: Element, scope: Scope, expression: string){
+    "h-click": function(stateName: string, ele: Element, scope: Scope, expression: string){
         ele.addEventListener("click",function(e){
-            console.log(scope);
+            hEval(stateName, scope, expression);//compile
         });
     }
+}
+
+function hEval(state:string, scope: Scope, exp: string){
+    eval("var "+state+"= scope;");
+    eval(exp);
 }

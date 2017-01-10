@@ -9,7 +9,7 @@ export default (): Hx => {
                 console.log(progressBar);
             }
             vm.togglePlay = function () {
-                music.stop();
+                music.toggle();
             }
             // return new Scope(function (scope: any) {
             //     scope.play = function (progressBar: number) {

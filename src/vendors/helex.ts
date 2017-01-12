@@ -64,11 +64,23 @@ function inject(_moudleName: string, _module: any) {
 let directiveCompiler: { [key: string]: Function } = {
     "h-click": function (stateName: string, ele: Element, scope: Scope, expression: string) {
         ele.addEventListener("click", function (e) {
-            (hEval)(stateName, scope, expression);//compile
+            hEval(stateName, scope, expression);//compile
         });
+    },
+    "h-class": function (stateName: string, ele: Element, scope: Scope, expression: string) {
+        let classObj = hEval(stateName, scope, "");//compile
+        // for(let cls in classObj){
+        //     observe(cls);
+        // }
     }
 }
 
 function hEval(sn: string, scope: Scope, exp: string) {
-    eval("var " + sn + "= scope;" + exp);
+    let temp:any;
+    console.log(eval("var " + sn + " = scope;" + exp));
+    return temp;
+}
+
+function observe() {
+
 }

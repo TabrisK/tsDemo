@@ -3,7 +3,7 @@ interface videoOptions {
     volume: number
 }
 class Sound {
-    private ele: HTMLMediaElement;
+    public ele: HTMLMediaElement;
     constructor(opts: videoOptions) {
         this.ele = document.createElement("video");
         this.ele.autoplay = true;
@@ -24,7 +24,6 @@ class Sound {
             this.ele.play();
         else
             this.ele.pause();
-
     }
 
 }

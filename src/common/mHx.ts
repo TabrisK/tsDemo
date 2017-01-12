@@ -5,6 +5,7 @@ export default (): Hx => {
     return new Hx({
         "header": ["music", function (music: Sound) {
             let vm = this;
+            vm.musicEle = music.ele;
             vm.play = function (progressBar: number) {
                 console.log(progressBar);
             }

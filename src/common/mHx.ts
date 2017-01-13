@@ -1,4 +1,4 @@
-import { Scope, Hx } from "../vendors/helex";
+import { Hx } from "../vendors/helex";
 import Sound from "../vendors/sound";
 
 export default (): Hx => {

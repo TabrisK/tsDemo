@@ -26,7 +26,8 @@ class Hx implements helex {
                 } else if (typeof item == "function") {
                     this.scopes[scopeName] = new Object();
                     item.apply(this.scopes[scopeName], objs);
-                    observe(this.scopes[scopeName])//data hijack
+                    //observe(this.scopes[scopeName])//data hijack
+                    observe.call(this.scopes[scopeName]);
                 }
             });
         }
@@ -74,20 +75,34 @@ let directiveCompiler: { [key: string]: Function } = {
 function hEval(sn: string, scope: Object, exp: string) {
     let temp: any;
     eval("var " + sn + " = scope;" + exp);
-    return temp;
 
 }
-function observe(scope: { [x: string]: any }) {
-    for (let key in scope) {
-        Object.defineProperty(scope, key, {//劫持数据
-            get: function () {
-                return this[key];
-            },
-            set: function (val) {
-                console.log("change");
-                this[key] = val;
-            }
-        });
+function observe() {
+    for (let key in this) {
+        if (
+            (this[key] && typeof this[key].paused == "boolean") ||
+            key == "paused"
+            // typeof this[key] == "object"
+        ) {
+            // if (Object.getOwnPropertyDescriptor(this, key) && Object.getOwnPropertyDescriptor(this, key).writable == false ||
+            //     !Object.getOwnPropertyDescriptor(this, key))
+            (function (scope: any, k: string) {
+                console.log("property");
+                let currentVal = scope[k];
+                Object.defineProperty(scope, k, {//劫持数据
+                    get: function () {
+                        console.log("get");
+                        return currentVal;
+                    },
+                    set: function (newVal) {
+                        console.log("change");
+                        currentVal = newVal;
+                        this[k] = newVal;
+                    }
+                });
+            })(this, key);
+            observe.call(this[key]);
+        }
     }
 
 }

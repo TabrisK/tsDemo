@@ -24,6 +24,7 @@ class Sound {
             this.ele.play();
         else
             this.ele.pause();
+            return !this.ele.paused
     }
 
 }

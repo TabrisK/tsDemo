@@ -1,12 +1,36 @@
+import * as _ from 'underscore';
 import { State } from "./router"
 import Util from "../vendors/util";
 
 export { Hx, inject }
 
-// class Scope {
-
-//     constructor() { return this; }
-// }
+namespace regUtil {
+    let objValGetter = new RegExp(/\s*:\s*([\w\+\-\*\/\=\%\!]*)\s*/g);
+    let objKeyGetter = new RegExp(/['"]?([\w\s]*)['"]?:/g);
+    export function parseObjStr(str: string): Array<ObjBrief> {
+        let l = [{
+            key: objKeyGetter.exec(str),
+            val: objValGetter.exec(str)
+        }];
+        while (l[l.length - 1].key !== null && l[l.length - 1].val !== null) {
+            l.push({
+                key: objKeyGetter.exec(str),
+                val: objValGetter.exec(str)
+            });
+        }
+        return _.compact(l.map((objEle) => {
+            if (objEle.key !== null && objEle.val !== null)
+                return {
+                    key: objEle.key[1],
+                    val: objEle.val[1]
+                }
+        }));
+    }
+    export interface ObjBrief {
+        key: string,
+        val: string
+    }
+}
 
 interface helex {
     compile(ele: HTMLElement, state: State): void;
@@ -27,7 +51,7 @@ class Hx implements helex {
                     this.scopes[scopeName] = new Object();
                     item.apply(this.scopes[scopeName], objs);
                     //observe(this.scopes[scopeName])//data hijack
-                    observe.call(this.scopes[scopeName]);
+                    observe.call(this.scopes[scopeName], scopeName);
                 }
             });
         }
@@ -65,44 +89,76 @@ let directiveCompiler: { [key: string]: Function } = {
         });
     },
     "h-class": function (stateName: string, ele: Element, scope: Object, expression: string) {
-        let classObj = hEval(stateName, scope, "");//compile
-        // for(let cls in classObj){
-        //     observe(cls);
-        // }
+        let classObj: any = hEval(stateName, scope, expression);//compile
+        parseClass();
+        getRelevant(scope, regUtil.parseObjStr(expression).map((objBrief: regUtil.ObjBrief) => objBrief.val));
+        listen(stateName, );
+
+        function parseClass() {
+            for (let c in classObj) {
+                if (classObj[c]) {// need to add class
+                    if (!ele.className.match(c))//doesn't have this class
+                        ele.className += " " + c;
+                } else //need to remove the class
+                    ele.className.replace(c, "");
+            }
+        }
+
     }
 }
 
-function hEval(sn: string, scope: Object, exp: string) {
+function hEval(sn: string, scope: Object, exp: string): any {
     let temp: any;
-    eval("var " + sn + " = scope;" + exp);
-
+    eval("var " + sn + " = scope;temp=" + exp);
+    return temp;
 }
-function observe() {
+
+function observe(scopeName: string, parentKey = "") {
     for (let key in this) {
         if (
-            (this[key] && typeof this[key].paused == "boolean") ||
-            key == "paused"
-            // typeof this[key] == "object"
+            // (this[key] && typeof this[key].paused == "boolean") ||
+            // key == "paused"
+            typeof this[key] != "function"
         ) {
-            // if (Object.getOwnPropertyDescriptor(this, key) && Object.getOwnPropertyDescriptor(this, key).writable == false ||
-            //     !Object.getOwnPropertyDescriptor(this, key))
             (function (scope: any, k: string) {
                 console.log("property");
                 let currentVal = scope[k];
                 Object.defineProperty(scope, k, {//劫持数据
                     get: function () {
                         console.log("get");
+                        broadcast("get", scopeName, parentKey + key, currentVal);
                         return currentVal;
                     },
                     set: function (newVal) {
                         console.log("change");
                         currentVal = newVal;
-                        this[k] = newVal;
+                        broadcast("set", scopeName, parentKey + key, currentVal);
                     }
                 });
             })(this, key);
-            observe.call(this[key]);
+            if (typeof this[key] == "object")
+                observe.call(this[key], scopeName, key);
         }
     }
+}
+
+function getRelevant(scope: any, strElement: string[]): string[] {//递归寻找匹配项。header.c.b.a  定位到branch末节
+    let l: string[] = [];
+    for (let i in strElement) {
+        for (let member in scope) {
+            if (!!strElement[i].match(member))
+                if (l.indexOf(member) < 0)
+                    l.push(member)
+        }
+
+    }
+    return l
+}
+
+function broadcast(operation: string, scope: string, key: string, val: any) {
 
 }
+
+// function on(scope, callback: function) {
+
+// }

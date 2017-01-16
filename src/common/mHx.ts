@@ -5,12 +5,12 @@ export default (): Hx => {
     return new Hx({
         "header": ["music", function (music: Sound) {
             let vm = this;
-            vm.musicEle = music.ele;
+            vm.playing = true;
             vm.play = function (progressBar: number) {
                 console.log(progressBar);
             }
             vm.togglePlay = function () {
-                music.toggle();
+                vm.playing = music.toggle();
             }
             // return new Scope(function (scope: any) {
             //     scope.play = function (progressBar: number) {

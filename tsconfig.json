@@ -1,9 +1,6 @@
 {
     "files": [
-        "src/main.ts",
-        "src/greet.ts",
-        "src/typeProtection.ts",
-        "src/router.ts"
+        "src/main.ts"
     ],
     "compilerOptions": {
         "noImplicitAny": true,

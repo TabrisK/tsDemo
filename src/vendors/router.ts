@@ -61,8 +61,8 @@ window.addEventListener("hashchange", (e) => {
         goDefault();
     }
 
-    console.log(getfromState());
-    console.log(getCurrentState());
+    // console.log(getfromState());
+    // console.log(getCurrentState());
 }, false);
 
 function getCurrentState() {
@@ -155,7 +155,7 @@ function getUrl(s: State | string): string {
     else if (s.node) {
         return s.node.replace(".", "/");
     } else {
-        console.error(s.name + " isn't a state.");
+        // console.error(s.name + " isn't a state.");
     }
 }
 
